@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">user-mgnt</a> &gt; <a href="index.source.html" class="el_package">com.example.user.controller</a> &gt; <span class="el_source">UserController.java</span></div><h1>UserController.java</h1><pre class="source lang-java linenums">package com.example.user.controller;
+
+import com.example.user.api.*;
+import com.example.user.service.UserService;
+import com.example.user.utils.ResponseBuilder;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+
+import java.util.UUID;
+
+@RestController
+@RequestMapping(path = &quot;/api/users&quot;, produces = MediaType.APPLICATION_JSON_VALUE)
+<span class="fc" id="L17">public class UserController {</span>
+    @Autowired
+    private UserService userService;
+
+    @PostMapping
+    public ResponseEntity&lt;ApiResponseDto&lt;UserResponse&gt;&gt; create(@Valid @RequestBody CreateUserRequest req) {
+<span class="fc" id="L23">        return ResponseBuilder.created(userService.create(req));</span>
+    }
+
+    @GetMapping
+    public ResponseEntity&lt;ApiResponseDto&lt;PagedResponse&lt;UserResponse&gt;&gt;&gt; userList(@RequestParam(defaultValue = &quot;0&quot;) int page,
+                                                       @RequestParam(defaultValue = &quot;20&quot;) int size, @RequestParam(required = false) String q,
+                                                       @RequestParam(defaultValue = &quot;true&quot;) boolean activeOnly, @RequestParam(required = false) String sort) {
+<span class="fc" id="L30">        return ResponseBuilder.success(PagedResponse.toPagedResponse(userService.getList(q, activeOnly, page, size, sort)));</span>
+    }
+
+    @DeleteMapping(&quot;/{id}&quot;)
+    public ResponseEntity&lt;ApiResponseDto&lt;UUID&gt;&gt; delete(@PathVariable UUID id,
+                                                       @RequestParam(defaultValue = &quot;true&quot;) boolean soft) {
+<span class="fc" id="L36">        return ResponseBuilder.success(userService.delete(id, soft));</span>
+    }
+
+    @GetMapping(&quot;/stats&quot;)
+    public ResponseEntity&lt;ApiResponseDto&lt;UserStatsResponseDto&gt;&gt; stats() {
+<span class="fc" id="L41">        return ResponseBuilder.success(userService.getStats());</span>
+    }
+
+
+
+
+}
+
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

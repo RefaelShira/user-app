@@ -1,0 +1,17 @@
+# root
+.DS_Store
+*.log
+.env
+.env.local
+
+# backend
+/backup/
+/target/
+/*.iml
+/.idea/
+
+# frontend
+/node_modules/
+/dist/
+/.vscode/
+npm-debug.log*

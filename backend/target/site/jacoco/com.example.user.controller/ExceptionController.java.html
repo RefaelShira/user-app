@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ExceptionController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">user-mgnt</a> &gt; <a href="index.source.html" class="el_package">com.example.user.controller</a> &gt; <span class="el_source">ExceptionController.java</span></div><h1>ExceptionController.java</h1><pre class="source lang-java linenums">package com.example.user.controller;
+
+import com.example.user.exceptions.*;
+import com.example.user.api.ApiResponseDto;
+import com.example.user.utils.ResponseBuilder;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.NoSuchElementException;
+
+<span class="fc" id="L17">@Slf4j</span>
+@ControllerAdvice
+<span class="fc" id="L19">public class ExceptionController {</span>
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleNoSuchElement(NoSuchElementException ex) {
+<span class="nc" id="L23">        return ResponseBuilder.error(HttpStatus.NOT_FOUND.value(), &quot;NOT_FOUND&quot;, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(NotFoundRecordException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleNotFound(NotFoundRecordException ex) {
+<span class="fc" id="L28">        return ResponseBuilder.error(HttpStatus.NOT_FOUND.value(), &quot;NOT_FOUND&quot;, ex.getMessage());</span>
+    }
+    @ExceptionHandler(DuplicateRecordException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleDuplicateRecord(DuplicateRecordException ex) {
+<span class="fc" id="L32">        return ResponseBuilder.error(HttpStatus.CONFLICT.value(), &quot;CONFLICT&quot;, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(UserAlreadyInactiveException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleAlreadyInactive(UserAlreadyInactiveException ex) {
+<span class="fc" id="L37">        return ResponseBuilder.error(HttpStatus.UNPROCESSABLE_ENTITY.value(), &quot;ALREADY_INACTIVE&quot;, ex.getMessage());</span>
+    }
+
+    @ExceptionHandler(WeakPasswordException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleWeakPassword(WeakPasswordException ex) {
+<span class="nc" id="L42">        return ResponseBuilder.error(HttpStatus.BAD_REQUEST.value(), &quot;BAD_REQUEST&quot;, ex.getMessage());</span>
+    }
+    @ExceptionHandler(ShortPasswordException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleShortPassword(ShortPasswordException ex) {
+<span class="nc" id="L46">        return ResponseBuilder.error(HttpStatus.BAD_REQUEST.value(), &quot;BAD_REQUEST&quot;, ex.getMessage());</span>
+    }
+    @ExceptionHandler(RequiredParamsException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleRequiredParams(RequiredParamsException ex) {
+<span class="nc" id="L50">        return ResponseBuilder.error(HttpStatus.BAD_REQUEST.value(), &quot;BAD_REQUEST&quot;, ex.getMessage());</span>
+    }
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleValidation(MethodArgumentNotValidException ex) {
+<span class="fc" id="L54">        return ResponseBuilder.error(400, &quot;VALIDATION_ERROR&quot;, &quot;Validation failed&quot;);</span>
+    }
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleGeneric(HttpMessageNotReadableException ex) {
+<span class="fc" id="L58">        return ResponseBuilder.error(HttpStatus.BAD_REQUEST.value(), &quot;MALFORMED_JSON&quot;, &quot;Request body is not readable JSON&quot;);</span>
+    }
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleServiceUnavailable(CallNotPermittedException ex) {
+<span class="fc" id="L62">        return ResponseBuilder.error(HttpStatus.SERVICE_UNAVAILABLE.value(), &quot;SERVICE_UNAVAILABLE&quot;, &quot;Please try again later&quot;);</span>
+    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity&lt;ApiResponseDto&lt;Void&gt;&gt; handleGeneric(Exception ex) {
+<span class="nc" id="L66">        return ResponseBuilder.error(HttpStatus.INTERNAL_SERVER_ERROR.value(), &quot;INTERNAL_ERROR&quot;, &quot;Unexpected error&quot;);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>

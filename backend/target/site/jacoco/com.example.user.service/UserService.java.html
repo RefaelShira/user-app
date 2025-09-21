@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>UserService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">user-mgnt</a> &gt; <a href="index.source.html" class="el_package">com.example.user.service</a> &gt; <span class="el_source">UserService.java</span></div><h1>UserService.java</h1><pre class="source lang-java linenums">package com.example.user.service;
+
+import com.example.user.exceptions.DuplicateRecordException;
+import com.example.user.exceptions.NotFoundRecordException;
+import com.example.user.exceptions.UserAlreadyInactiveException;
+import com.example.user.api.CreateUserRequest;
+import com.example.user.api.UserResponse;
+import com.example.user.api.UserStatsResponseDto;
+import com.example.user.domain.PasswordPolicy;
+import com.example.user.entity.UserEntity;
+import com.example.user.repository.UserRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import jakarta.transaction.Transactional;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+<span class="fc" id="L29">@Slf4j</span>
+@Service
+<span class="fc" id="L31">public class UserService {</span>
+    @Autowired
+    private UserRepository repo;
+    @Autowired
+    private PasswordPolicy passwordPolicy;
+    @Autowired
+    private PasswordEncoder encoder;
+    private static final int MAX_PAGE_SIZE = 100;
+    @Retry(name = &quot;dbOps&quot;)
+    @CircuitBreaker(name = &quot;dbOps&quot;)
+    @Transactional
+    public UserResponse create(CreateUserRequest req) {
+<span class="pc bpc" id="L43" title="1 of 2 branches missed.">        final String trimEmail = req.getEmail() == null ? null : req.getEmail().trim();</span>
+
+<span class="fc" id="L45">        passwordPolicy.validate(trimEmail, req.getPassword());</span>
+
+<span class="fc" id="L47">        repo.findByEmailIgnoreCase(trimEmail).ifPresent(u -&gt; {</span>
+<span class="fc" id="L48">            throw new DuplicateRecordException(&quot;Email already exists&quot;);</span>
+        });
+
+<span class="fc" id="L51">        UserEntity ent = UserEntity.builder()</span>
+<span class="fc" id="L52">                .firstName(req.getFirstName())</span>
+<span class="fc" id="L53">                .lastName(req.getLastName())</span>
+<span class="fc" id="L54">                .email(trimEmail)</span>
+<span class="fc" id="L55">                .passwordHash(encoder.encode(req.getPassword()))</span>
+<span class="fc" id="L56">                .active(true)</span>
+<span class="fc" id="L57">                .build();</span>
+
+        try {
+<span class="fc" id="L60">            return UserEntity.toResponse(repo.save(ent));</span>
+<span class="fc" id="L61">        } catch (DataIntegrityViolationException e) {</span>
+<span class="fc" id="L62">            throw new DuplicateRecordException(&quot;Email already exists&quot;);</span>
+        }
+    }
+    @Retry(name = &quot;dbOps&quot;)
+    @CircuitBreaker(name = &quot;dbOps&quot;)
+    @Transactional
+    public Page&lt;UserResponse&gt; getList(String q, boolean activeOnly, int page, int size, String sort) {
+
+<span class="fc" id="L70">        int safePage = Math.max(0, page);</span>
+<span class="fc bfc" id="L71" title="All 2 branches covered.">        int safeSize = Math.max(1, Math.min(size &lt;= 0 ? 20 : size, MAX_PAGE_SIZE));</span>
+
+
+<span class="fc" id="L74">        Sort s = Sort.by(Sort.Direction.DESC, &quot;createdAt&quot;).and(Sort.by(&quot;id&quot;).descending());</span>
+<span class="pc bpc" id="L75" title="1 of 4 branches missed.">        if (sort != null &amp;&amp; sort.contains(&quot;,&quot;)) {</span>
+<span class="fc" id="L76">            String[] parts = sort.split(&quot;,&quot;, 2);</span>
+<span class="pc bpc" id="L77" title="2 of 4 branches missed.">            var dir = parts.length &gt; 1 &amp;&amp; &quot;asc&quot;.equalsIgnoreCase(parts[1]) ? Sort.Direction.ASC : Sort.Direction.DESC;</span>
+<span class="fc" id="L78">            s = Sort.by(new Sort.Order(dir, parts[0]));</span>
+        }
+
+<span class="fc" id="L81">        Pageable pageable = PageRequest.of(safePage, safeSize, s);</span>
+<span class="fc" id="L82">        return repo.search(q, activeOnly, pageable).map(UserEntity::toResponse);</span>
+    }
+    @Retry(name = &quot;dbOps&quot;)
+    @CircuitBreaker(name = &quot;dbOps&quot;)
+    @Transactional
+    public UUID delete(UUID id, boolean soft) {
+<span class="fc" id="L88">        UserEntity ent = repo.findById(id).orElseThrow(() -&gt; new NotFoundRecordException(&quot;User not found&quot;));</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (soft) {</span>
+<span class="fc bfc" id="L90" title="All 2 branches covered.">            if (!ent.isActive()) {</span>
+<span class="fc" id="L91">                throw new UserAlreadyInactiveException(&quot;User Already inactive&quot;);</span>
+            }
+<span class="fc" id="L93">            ent.setActive(false);</span>
+        } else {
+<span class="fc" id="L95">            repo.delete(ent);</span>
+        }
+<span class="fc" id="L97">        return id;</span>
+    }
+    @Retry(name = &quot;dbOps&quot;)
+    @CircuitBreaker(name = &quot;dbOps&quot;)
+    @Transactional
+    public UserStatsResponseDto getStats() {
+<span class="fc" id="L103">        return UserStatsResponseDto.builder()</span>
+<span class="fc" id="L104">                .createdLast24h(repo.countUsersCreatedSince(Instant.now().minus(24, ChronoUnit.HOURS)))</span>
+<span class="fc" id="L105">                .build();</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.10.202304240956</span></div></body></html>
